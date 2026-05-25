@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>切断本数入力</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  background: #111c2a;
+  color: #e0e8f0;
+  min-height: 100vh;
+  padding-bottom: 40px;
+}
+.header {
+  background: #111c2a;
+  padding: 20px 20px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex; align-items: center; gap: 12px;
+}
+.logo-mark {
+  width: 36px; height: 36px; background: #e8834a;
+  border-radius: 8px; display: flex; align-items: center;
+  justify-content: center; font-size: 18px; flex-shrink: 0;
+}
+.header-text .app-title { font-size: 16px; font-weight: 600; }
+.header-text .app-sub   { font-size: 12px; color: #7a9ab5; margin-top: 2px; }
+
+.section { padding: 20px 20px 0; }
+.label {
+  font-size: 11px; font-weight: 600; color: #7a9ab5;
+  letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px;
+}
+
+.info-card {
+  background: rgba(255,255,255,0.06);
+  border: 0.5px solid rgba(255,255,255,0.1);
+  border-radius: 14px; padding: 16px 18px;
+  display: flex; align-items: center; gap: 14px;
+}
+.info-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.date-icon { background: rgba(232,131,74,0.18); }
+.user-icon { background: rgba(78,160,210,0.18); }
+.info-main  { font-size: 17px; font-weight: 600; color: #e0e8f0; }
+.info-edit  { font-size: 12px; color: #4ea0d2; margin-top: 3px; cursor: pointer; }
+
+.count-card {
+  background: rgba(255,255,255,0.06);
+  border: 0.5px solid rgba(255,255,255,0.1);
+  border-radius: 14px; padding: 20px 20px 24px;
+}
+.count-row { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.count-input {
+  flex: 1; background: rgba(255,255,255,0.08);
+  border: 1.5px solid rgba(255,255,255,0.15);
+  border-radius: 12px; color: #e0e8f0;
+  font-size: 48px; font-weight: 700;
+  text-align: center; padding: 18px 12px; outline: none;
+  -webkit-appearance: none; appearance: none; width: 100%;
+}
+.count-input:focus { border-color: #e8834a; background: rgba(232,131,74,0.1); }
+.count-input::placeholder { color: rgba(255,255,255,0.2); }
+.unit { font-size: 20px; color: #7a9ab5; flex-shrink: 0; }
+
+.submit-btn {
+  display: block; width: calc(100% - 40px);
+  margin: 20px 20px 0; background: #e8834a; color: white;
+  border: none; border-radius: 14px; padding: 20px;
+  font-size: 18px; font-weight: 600; cursor: pointer; text-align: center;
+}
+.submit-btn:active { opacity: 0.8; transform: scale(0.98); }
+
+.result-msg { margin: 16px 20px 0; border-radius: 12px; padding: 16px 18px; display: none; }
+.result-msg.show { display: block; }
+.result-success { background: rgba(50,180,120,0.15); border: 0.5px solid rgba(50,180,120,0.4); }
+.result-error   { background: rgba(220,60,60,0.15);  border: 0.5px solid rgba(220,60,60,0.4); }
+.result-msg-text { font-size: 15px; font-weight: 600; }
+.result-success .result-msg-text { color: #5ecfa0; }
+.result-error   .result-msg-text { color: #e87070; }
+.result-msg-sub { font-size: 12px; margin-top: 4px; }
+.result-success .result-msg-sub { color: #4ea07a; }
+.result-error   .result-msg-sub { color: #b05050; }
+
+.history { margin: 24px 20px 0; }
+.history-title { font-size: 11px; font-weight: 600; color: #7a9ab5; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
+.history-item {
+  background: rgba(255,255,255,0.04); border-radius: 10px;
+  padding: 12px 16px; margin-bottom: 6px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.history-date  { font-size: 13px; color: #a0b8cc; }
+.history-count { font-size: 15px; font-weight: 600; color: #e0e8f0; }
+
+.name-overlay {
+  display: none; position: fixed; inset: 0;
+  background: #111c2a; z-index: 200;
+  flex-direction: column; padding: 48px 24px 24px; overflow-y: auto;
+}
+.name-overlay.show { display: flex; }
+.setup-title { font-size: 22px; font-weight: 700; color: #e0e8f0; margin-bottom: 6px; }
+.setup-sub   { font-size: 14px; color: #7a9ab5; margin-bottom: 28px; }
+.name-list   { display: flex; flex-direction: column; gap: 10px; }
+.name-btn {
+  background: rgba(255,255,255,0.07);
+  border: 0.5px solid rgba(255,255,255,0.12);
+  border-radius: 14px; padding: 18px 20px;
+  font-size: 17px; color: #e0e8f0; cursor: pointer; text-align: left;
+  -webkit-appearance: none;
+}
+.name-btn.selected { background: rgba(232,131,74,0.2); border-color: #e8834a; color: #e8834a; }
+.confirm-btn {
+  margin-top: 24px; background: #e8834a; color: white;
+  border: none; border-radius: 14px; padding: 20px;
+  font-size: 17px; font-weight: 600; cursor: pointer;
+  opacity: 0.4; pointer-events: none; flex-shrink: 0;
+}
+.confirm-btn.active { opacity: 1; pointer-events: auto; }
+</style>
+</head>
+<body>
+
+<div class="name-overlay" id="nameOverlay">
+  <p class="setup-title">作業者を選択</p>
+  <p class="setup-sub">あなたのお名前を選んでください。次回から自動的に表示されます。</p>
+  <div class="name-list" id="nameList"></div>
+  <button class="confirm-btn" id="confirmBtn" onclick="saveName()">このアカウントで使う</button>
+</div>
+
+<div class="header">
+  <div class="logo-mark">✂</div>
+  <div class="header-text">
+    <div class="app-title">切断本数入力</div>
+    <div class="app-sub" id="headerSub">作業者を選択してください</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="label">本日の日付</div>
+  <div class="info-card">
+    <div class="info-icon date-icon">📅</div>
+    <div>
+      <div class="info-main" id="todayDate">取得中...</div>
+      <div class="info-edit">自動設定</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:16px;">
+  <div class="label">作業者</div>
+  <div class="info-card">
+    <div class="info-icon user-icon">👤</div>
+    <div>
+      <div class="info-main" id="currentName">未設定</div>
+      <div class="info-edit" onclick="showNameOverlay()">変更する</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:16px;">
+  <div class="count-card">
+    <div class="label">本日の切断本数</div>
+    <div class="count-row">
+      <input type="number" class="count-input" id="countInput"
+        inputmode="numeric" pattern="[0-9]*" placeholder="0" min="0" max="9999">
+      <span class="unit">本</span>
+    </div>
+  </div>
+</div>
+
+<button class="submit-btn" id="submitBtn" onclick="submitData()">送信する</button>
+
+<div class="result-msg" id="resultMsg">
+  <div class="result-msg-text" id="resultText"></div>
+  <div class="result-msg-sub"  id="resultSub"></div>
+</div>
+
+<div class="history" id="historySection" style="display:none;">
+  <div class="history-title">最近の入力履歴</div>
+  <div id="historyList"></div>
+</div>
+
+<script>
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxGd-mCI6rkIQnlZXHyMd0GB1q5n9dQw8f7pgsTBMZeFENRDnG_n51Vjlt9WO4IBxpW/exec";
+
+const WORKERS = [
+  "佐藤　伸哉",
+  "杉山　正憲",
+  "木村　亘宏",
+  "グエン　ゴック　トゥアン",
+  "林　政夫",
+  "後藤　晃一郎",
+  "林　和之",
+  "チャン　ユオン　ユイ　カン",
+  "長谷川　伸之輔",
+  "宇藤　優希",
+  "吉澤　晧理",
+  "グエン　ヴァン　ルエン",
+  "チャン　フォン　リン",
+  "ファム　タン",
+  "レー　ベト　アイン",
+  "潘　銘嘉"
+];
+
+let selectedNameTemp = null;
+
+function getTodayDisplay() {
+  const d = new Date();
+  const week = ['日','月','火','水','木','金','土'];
+  return d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日（' + week[d.getDay()] + '）';
+}
+
+function getTodayKey() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function init() {
+  document.getElementById('todayDate').textContent = getTodayDisplay();
+  const name = localStorage.getItem('workerName');
+  if (name) {
+    document.getElementById('currentName').textContent = name;
+    document.getElementById('headerSub').textContent = name + ' さん';
+  } else {
+    showNameOverlay();
+  }
+  loadHistory();
+}
+
+function showNameOverlay() {
+  const list = document.getElementById('nameList');
+  list.innerHTML = '';
+  selectedNameTemp = null;
+  document.getElementById('confirmBtn').classList.remove('active');
+  WORKERS.forEach(function(name) {
+    const btn = document.createElement('button');
+    btn.className = 'name-btn';
+    btn.textContent = name;
+    btn.onclick = function() {
+      document.querySelectorAll('.name-btn').forEach(function(b){ b.classList.remove('selected'); });
+      btn.classList.add('selected');
+      selectedNameTemp = name;
+      document.getElementById('confirmBtn').classList.add('active');
+    };
+    list.appendChild(btn);
+  });
+  document.getElementById('nameOverlay').classList.add('show');
+}
+
+function saveName() {
+  if (!selectedNameTemp) return;
+  localStorage.setItem('workerName', selectedNameTemp);
+  document.getElementById('currentName').textContent = selectedNameTemp;
+  document.getElementById('headerSub').textContent = selectedNameTemp + ' さん';
+  document.getElementById('nameOverlay').classList.remove('show');
+}
+
+function loadHistory() {
+  const history = JSON.parse(localStorage.getItem('cutHistory') || '[]');
+  if (history.length === 0) return;
+  document.getElementById('historySection').style.display = 'block';
+  const list = document.getElementById('historyList');
+  list.innerHTML = '';
+  history.slice().reverse().slice(0, 10).forEach(function(item) {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = '<span class="history-date">' + item.date + '　' + item.name + '</span><span class="history-count">' + item.count + ' 本</span>';
+    list.appendChild(div);
+  });
+}
+
+async function submitData() {
+  const name    = localStorage.getItem('workerName');
+  const count   = document.getElementById('countInput').value.trim();
+  const btn     = document.getElementById('submitBtn');
+  const msg     = document.getElementById('resultMsg');
+  const msgText = document.getElementById('resultText');
+  const msgSub  = document.getElementById('resultSub');
+
+  msg.className = 'result-msg';
+
+  if (!name)  { alert('作業者名を選択してください。'); showNameOverlay(); return; }
+  if (!count || isNaN(count) || Number(count) < 0) { alert('本数を正しく入力してください。'); return; }
+
+  btn.textContent = '送信中...';
+  btn.style.opacity = '0.6';
+  btn.style.pointerEvents = 'none';
+
+  const today  = getTodayKey();
+  const params = new URLSearchParams({ date: today, name: name, count: count });
+
+  try {
+    await fetch(GAS_URL + '?' + params.toString(), { method: 'GET', mode: 'no-cors' });
+
+    const history = JSON.parse(localStorage.getItem('cutHistory') || '[]');
+    const idx = history.findIndex(function(h){ return h.date === today && h.name === name; });
+    if (idx >= 0) { history[idx].count = count; }
+    else { history.push({ date: today, name: name, count: count }); }
+    localStorage.setItem('cutHistory', JSON.stringify(history));
+
+    msg.className = 'result-msg show result-success';
+    msgText.textContent = '✓ 送信完了：' + count + ' 本';
+    msgSub.textContent  = name + ' / ' + getTodayDisplay();
+    document.getElementById('countInput').value = '';
+    loadHistory();
+
+  } catch(e) {
+    msg.className = 'result-msg show result-error';
+    msgText.textContent = '送信に失敗しました';
+    msgSub.textContent  = 'ネットワーク接続を確認してください';
+  }
+
+  btn.textContent = '送信する';
+  btn.style.opacity = '1';
+  btn.style.pointerEvents = 'auto';
+}
+
+init();
+</script>
+</body>
+</html>
