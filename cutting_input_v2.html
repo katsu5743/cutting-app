@@ -51,6 +51,29 @@ body {
 .info-main  { font-size: 17px; font-weight: 600; color: #e0e8f0; }
 .info-edit  { font-size: 12px; color: #4ea0d2; margin-top: 3px; cursor: pointer; }
 
+.machine-card {
+  background: rgba(255,255,255,0.06);
+  border: 0.5px solid rgba(255,255,255,0.1);
+  border-radius: 14px; padding: 16px 18px 18px;
+}
+.machine-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px; margin-top: 12px;
+}
+.machine-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1.5px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  color: #e0e8f0; font-size: 18px; font-weight: 600;
+  padding: 14px 0; text-align: center; cursor: pointer;
+  -webkit-appearance: none;
+}
+.machine-btn.selected {
+  background: rgba(232,131,74,0.25);
+  border-color: #e8834a; color: #e8834a;
+}
+
 .count-card {
   background: rgba(255,255,255,0.06);
   border: 0.5px solid rgba(255,255,255,0.1);
@@ -164,6 +187,13 @@ body {
 </div>
 
 <div class="section" style="margin-top:16px;">
+  <div class="machine-card">
+    <div class="label">号機を選択</div>
+    <div class="machine-grid" id="machineGrid"></div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:16px;">
   <div class="count-card">
     <div class="label">本日の切断本数</div>
     <div class="count-row">
@@ -205,11 +235,13 @@ const WORKERS = [
   "チャン　フォン　リン",
   "ファム　タン",
   "レー　ベト　アイン",
-  "潘　銘嘉",
-  "尾嵜　優"
+  "潘　銘嘉"
 ];
 
+const MACHINES = [1,2,3,4,5,6,11,12,13,14,15,16,17,22,31,32,33,34];
+
 let selectedNameTemp = null;
+let selectedMachine  = null;
 
 function getTodayDisplay() {
   const d = new Date();
@@ -231,7 +263,30 @@ function init() {
   } else {
     showNameOverlay();
   }
+  buildMachineGrid();
   loadHistory();
+}
+
+function buildMachineGrid() {
+  const grid = document.getElementById('machineGrid');
+  grid.innerHTML = '';
+  const saved = localStorage.getItem('machineNo');
+  MACHINES.forEach(function(no) {
+    const btn = document.createElement('button');
+    btn.className = 'machine-btn';
+    btn.textContent = no;
+    if (saved !== null && Number(saved) === no) {
+      btn.classList.add('selected');
+      selectedMachine = no;
+    }
+    btn.onclick = function() {
+      document.querySelectorAll('.machine-btn').forEach(function(b){ b.classList.remove('selected'); });
+      btn.classList.add('selected');
+      selectedMachine = no;
+      localStorage.setItem('machineNo', no);
+    };
+    grid.appendChild(btn);
+  });
 }
 
 function showNameOverlay() {
@@ -269,9 +324,10 @@ function loadHistory() {
   const list = document.getElementById('historyList');
   list.innerHTML = '';
   history.slice().reverse().slice(0, 10).forEach(function(item) {
+    const machineText = item.machine ? '　' + item.machine + '号機' : '';
     const div = document.createElement('div');
     div.className = 'history-item';
-    div.innerHTML = '<span class="history-date">' + item.date + '　' + item.name + '</span><span class="history-count">' + item.count + ' 本</span>';
+    div.innerHTML = '<span class="history-date">' + item.date + '　' + item.name + machineText + '</span><span class="history-count">' + item.count + ' 本</span>';
     list.appendChild(div);
   });
 }
@@ -287,6 +343,7 @@ async function submitData() {
   msg.className = 'result-msg';
 
   if (!name)  { alert('作業者名を選択してください。'); showNameOverlay(); return; }
+  if (selectedMachine === null) { alert('号機を選択してください。'); return; }
   if (!count || isNaN(count) || Number(count) < 0) { alert('本数を正しく入力してください。'); return; }
 
   btn.textContent = '送信中...';
@@ -294,19 +351,17 @@ async function submitData() {
   btn.style.pointerEvents = 'none';
 
   const today  = getTodayKey();
-  const params = new URLSearchParams({ date: today, name: name, count: count });
+  const params = new URLSearchParams({ date: today, name: name, count: count, machine: selectedMachine });
 
   try {
     await fetch(GAS_URL + '?' + params.toString(), { method: 'GET', mode: 'no-cors' });
 
     const history = JSON.parse(localStorage.getItem('cutHistory') || '[]');
-    const idx = history.findIndex(function(h){ return h.date === today && h.name === name; });
-    if (idx >= 0) { history[idx].count = count; }
-    else { history.push({ date: today, name: name, count: count }); }
+    history.push({ date: today, name: name, count: count, machine: selectedMachine });
     localStorage.setItem('cutHistory', JSON.stringify(history));
 
     msg.className = 'result-msg show result-success';
-    msgText.textContent = '✓ 送信完了：' + count + ' 本';
+    msgText.textContent = '✓ 送信完了：' + selectedMachine + '号機 ' + count + ' 本';
     msgSub.textContent  = name + ' / ' + getTodayDisplay();
     document.getElementById('countInput').value = '';
     loadHistory();
